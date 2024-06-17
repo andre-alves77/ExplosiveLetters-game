@@ -26,6 +26,8 @@ int outs[4] = {out_amarelo, out_azul, out_cinza, out_ciano}; // Pinos de saída
 int ordem[4] = {in_amarelo, in_azul, in_cinza, in_ciano}; // Pinos de entrada
 
 static const char htmlAntes[] PROGMEM = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"UTF-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\"><title>Explosive Letters</title><style>body { font-family: Arial, sans-serif; background-color: #333; color: #fff; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; } .container { text-align: center; background: #222; padding: 20px; border-radius: 8px; box-shadow: 0 0 20px rgba(255, 0, 0, 0.5); } h1 { color: #ffcc00; font-size: 2.5em; margin-bottom: 20px; } p { color: #ffcc00; font-size: 1.2em; } .button-container { margin-top: 20px; } .start-button { background-color: #ff0000; color: white; padding: 10px 20px; border: none; border-radius: 5px; font-size: 1.2em; cursor: pointer; transition: background-color 0.3s; } .start-button:hover { background-color: #cc0000; }</style></head><body><div class=\"container\"><h1>Explosive Letters</h1>";
+static char script[] PROGMEM = "<script> var intervalo = null; var contador = document.getElementById('contador'); var tempoRestante = parseInt(localStorage.getItem(\"tempoRestante\")) || 60; function atualizarContador() { contador.textContent = `Tempo restante: ${tempoRestante}s`; } function pararTemporizador() { if (intervalo) { clearInterval(intervalo); intervalo = null; } localStorage.setItem(\"tempoRestante\", tempoRestante); } function verificar() { pararTemporizador(); /* Ir para a página de verificação */ } function iniciarTemporizador() { atualizarContador(); intervalo = setInterval(function() { if (!tempoRestante) { tempoRestante = 60; pararTemporizador(); /* Ir para a página de game over */ return; } tempoRestante--; atualizarContador(); }, 1000); } iniciarTemporizador(); </script>";
+
 static const char htmlDepois[] PROGMEM = "</div></body></html>\r\n";
 
 void handleNotFound() {
@@ -50,7 +52,7 @@ void indexPage(){
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html", "");
   server.sendContent(htmlAntes);
-  server.sendContent("<p>Conecte os fios corretos para desativar a bomba!</p><div class=\"button-container\"><a href=\"/startGame\"><button class=\"start-button\" onclick=\"/startGame\">Iniciar Jogo</button></a></div>");
+  server.sendContent("<p>Conecte os fios corretos para desativar a bomba!</p><div class=\"button-container\"><a href=\"/startGame\"><button class=\"start-button\">Iniciar Jogo</button></a></div>");
   server.sendContent(htmlDepois);
 }
 
@@ -64,9 +66,11 @@ void startGame() {
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html", "");
   server.sendContent(htmlAntes);
+  server.sendContent(script);
   server.sendContent("<p>Tentativas Restantes:");
   server.sendContent(String(tentativas_restantes));
   server.sendContent("</p>");
+  server.sendContent("<p id=\"contador\"></p>");
   server.sendContent("<div id=\"game-container\"><div class=\"button-container\"><a href=\"/verifyGame\" class=\"start-button\">Verificar</a></div></div>");
   server.sendContent(htmlDepois);
 }
@@ -89,7 +93,7 @@ void winGame(){
   server.setContentLength(CONTENT_LENGTH_UNKNOWN);
   server.send(200, "text/html", "");
   server.sendContent(htmlAntes);
-  server.sendContent("<p>É NOISS ALEK TAMO GARAIO!</p><div class=\"button-container\"><a href=\"/\" class=\"start-button\">Reiniciar</a></div>");
+  server.sendContent("<p>Parabéns!<br> Você desativou a bomba com sucesso e salvou o dia!</p><div class=\"button-container\"><a href=\"/\" class=\"start-button\">Reiniciar</a></div>");
   server.sendContent(htmlDepois);
 }
 
@@ -122,12 +126,14 @@ void verifyGame() {
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);
     server.send(200, "text/html", "");
     server.sendContent(htmlAntes);
+    server.sendContent(script);
     server.sendContent("<p>Acertos:");
     server.sendContent(String(acertos));
     server.sendContent("</p>");
     server.sendContent("<p>Tentativas Restantes: ");
     server.sendContent(String(tentativas_restantes));
-    server.sendContent("</p><div class=\"button-container\"><a href=\"/verifyGame\" class=\"start-button\">Reiniciar</a></div>");
+    server.sendContent("<p id=\"contador\"></p>");
+    server.sendContent("</p><div class=\"button-container\"><a href=\"/verifyGame\" class=\"start-button\">Verificar</a></div>");
     server.sendContent(htmlDepois);
   }
 }
@@ -176,7 +182,6 @@ void loop() {
   server.handleClient();
   MDNS.update();
 }
-
 
 
 
